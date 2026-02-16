@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Selamat Ulang Tahun & Sweet Seventeen</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #ff9a9e, #fecfef, #fecfef, #ffecd2);
+            color: #333;
+            overflow-x: hidden;
+        }
+        .slide {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+            text-align: center;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+        .slide.active {
+            display: flex;
+        }
+        .slide h1, .slide h2 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            color: #fff;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        .slide p {
+            font-size: 1.2em;
+            margin: 10px 0;
+        }
+        input, button {
+            padding: 10px;
+            margin: 10px;
+            border: none;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+        button {
+            background: #ff6b6b;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #ff5252;
+        }
+        .options {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .option {
+            margin: 5px;
+            padding: 10px;
+            background: #fff;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 200px;
+        }
+        .option:hover {
+            background: #f0f0f0;
+        }
+        .correct {
+            background: #4caf50 !important;
+            color: white;
+        }
+        .wrong {
+            background: #f44336 !important;
+            color: white;
+        }
+        .long-text {
+            max-height: 70vh;
+            overflow-y: auto;
+            background: rgba(255,255,255,0.9);
+            padding: 20px;
+            border-radius: 10px;
+            font-size: 0.9em;
+            text-align: left;
+        }
+        .animation {
+            animation: bounce 2s infinite;
+        }
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-30px); }
+            60% { transform: translateY(-15px); }
+        }
+        .envelope {
+            width: 100px;
+            height: 60px;
+            background: #8b4513;
+            position: relative;
+            margin: 20px auto;
+            cursor: pointer;
+        }
+        .envelope::before {
+            content: '';
+            position: absolute;
+            top: -20px;
+            left: 0;
+            width: 0;
+            height: 0;
+            border-left: 50px solid transparent;
+            border-right: 50px solid transparent;
+            border-bottom: 20px solid #8b4513;
+        }
+        .letter {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+        .letter.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div id="slide1" class="slide active">
+        <h1>Selamat Ulang Tahun!</h1>
+        <h2>Sweet Seventeen, Peboyy! 🎉</h2>
+        <button onclick="nextSlide()">Lanjut</button>
+    </div>
+
+    <div id="slide2" class="slide">
+        <h2>Masukkan Namamu</h2>
+        <input type="text" id="nameInput" placeholder="Nama kamu">
+        <button onclick="saveName()">Simpan</button>
+    </div>
+
+    <div id="slide3" class="slide">
+        <h2>Masukkan Tanggal Lahirmu</h2>
+        <input type="date" id="birthInput">
+        <button onclick="saveBirth()">Simpan</button>
+    </div>
+
+    <div id="slide4" class="slide">
+        <h2>Wah, Ada yang Ulang Tahun Nih Berarti!</h2>
+        <p>Kamu hari ini ulang tahun?</p>
+        <div class="options">
+            <div class="option" onclick="checkAnswer(this, 'iya')">Iya Lahh! 😄</div>
+            <div class="option" onclick="checkAnswer(this, 'tidak')">Tidak</div>
+            <div class="option" onclick="checkAnswer(this, 'mungkin')">Mungkin</div>
+        </div>
+    </div>
+
+    <div id="slide5" class="slide">
+        <h2>Pertanyaan Persahabatan 1</h2>
+        <p>Apa yang membuat persahabatan kuat?</p>
+        <div class="options">
+            <div class="option" onclick="checkQuiz(this, 'kepercayaan')">Kepercayaan</div>
+            <div class="option" onclick="checkQuiz(this, 'uang')">Uang</div>
+            <div class="option" onclick="checkQuiz(this, 'kekuasaan')">Kekuasaan</div>
+            <div class="option" onclick="checkQuiz(this, 'waktu')">Waktu</div>
+        </div>
+    </div>
+
+    <div id="slide6" class="slide">
+        <h2>Pertanyaan Persahabatan 2</h2>
+        <p>Apa yang harus dilakukan jika sahabat marah?</p>
+        <div class="options">
+            <div class="option" onclick="checkQuiz(this, 'bicara')">Bicara terbuka</div>
+            <div class="option" onclick="checkQuiz(this, 'marah')">Marah balik</div>
+            <div class="option" onclick="checkQuiz(this, 'abaikan')">Abaikan</div>
+            <div class="option" onclick="checkQuiz(this, 'lari')">Lari</div>
+        </div>
+    </div>
+
+    <div id="slide7" class="slide">
+        <h2>Pertanyaan Persahabatan 3</h2>
+        <p>Apa ciri sahabat sejati?</p>
+        <div class="options">
+            <div class="option" onclick="checkQuiz(this, 'jujur')">Jujur</div>
+            <div class="option" onclick="checkQuiz(this, 'bohong')">Bohong</div>
+            <div class="option" onclick="checkQuiz(this, 'egois')">Egois</div>
+            <div class="option" onclick="checkQuiz(this, 'pendiam')">Pendiam</div>
+        </div>
+    </div>
+
+    <div id="slide8" class="slide">
+        <h2>Pertanyaan Persahabatan 4</h2>
+        <p>Bagaimana cara menjaga persahabatan?</p>
+        <div class="options">
+            <div class="option" onclick="checkQuiz(this, 'komunikasi')">Komunikasi</div>
+            <div class="option" onclick="checkQuiz(this, 'pertengkaran')">Pertengkaran</div>
+            <div class="option" onclick="checkQuiz(this, 'jarak')">Jarak</div>
+            <div class="option" onclick="checkQuiz(this, 'lupa')">Lupa</div>
+        </div>
+    </div>
+
+    <div id="slide9" class="slide">
+        <h2>Pertanyaan Persahabatan 5</h2>
+        <p>Apa yang tidak boleh dilakukan pada sahabat?</p>
+        <div class="options">
+            <div class="option" onclick="checkQuiz(this, 'khianat')">Khianat</div>
+            <div class="option" onclick="checkQuiz(this, 'bantu')">Bantu</div>
+            <div class="option" onclick="checkQuiz(this, 'dukung')">Dukung</div>
+            <div class="option" onclick="checkQuiz(this, 'sayang')">Sayang</div>
+        </div>
+    </div>
+
+    <div id="slide10" class="slide">
+        <h2>Pertanyaan Persahabatan 6</h2>
+        <p>Apa arti persahabatan?</p>
+        <div class="options">
+            <div class="option" onclick="checkQuiz(this, 'dukungan')">Dukungan</div>
+            <div class="option" onclick="checkQuiz(this, 'kesepian')">Kesepian</div>
+            <div class="option" onclick="checkQuiz(this, 'konflik')">Konflik</div>
+            <div class="option" onclick="checkQuiz(this, 'uang')">Uang</div>
+        </div>
+    </div>
+
+    <div id="slide11" class="slide">
+        <h1 class="animation">Selamat Ulang Tahun!</h1>
+        <div class="envelope" onclick="openLetter()"></div>
+        <div class="letter" id="letter">
+            <p>Surat untukmu: Semoga harimu penuh kebahagiaan! 🎂</p>
+        </div>
+        <button onclick="nextSlide()">Lanjut</button>
+    </div>
+
+    <div id="slide12" class="slide">
+        <h1 style="font-size: 4em;">Happy Birthday & Sweet Seventeen!</h1>
+        <button onclick="nextSlide()">Geser ke Ucapan</button>
+    </div>
+
+    <div id="slide13" class="slide">
+        <div class="long-text">
+            <h2>Ucapan Panjang dengan Ilmu Pengetahuan</h2>
+            <p>Matematika: Rumus Pythagoras: a² + b² = c². Integral: ∫x dx = (1/2)x² + C.</p>
+            <p>Fisika: Hukum Newton: F = ma. Energi: E = mc².</p>
+            <p>Kimia: Reaksi: 2H₂ + O₂ → 2H₂O. Tabel Periodik: Hidrogen (H), Oksigen (O), dll.</p>
+            <p>Biologi: Fotosintesis: 6CO₂ + 6H₂O → C₆H₁₂O₆ + 6O₂. DNA adalah pembawa genetik.</p>
+            <p>Informatika: Algoritma sorting, seperti Bubble Sort. Kode: if (x > y) swap.</p>
+            <p>Doa: Semoga Allah SWT memberikan kesehatan, kebahagiaan, dan kesuksesan di usia 17 tahun ini. Amin.</p>
+            <p>Ungkapan: Persahabatan seperti bintang, selalu bersinar di malam gelap. Teruslah menjadi pribadi yang luar biasa!</p>
+        </div>
+        <button onclick="nextSlide()">Lanjut</button>
+    </div>
+
+    <div id="slide14" class="slide">
+        <div class="long-text">
+            <p>Lanjutan: Matematika lanjutan: Limit: lim(x→0) sin(x)/x = 1. Derivatif: d/dx (x²) = 2x.</p>
+            <p>Fisika: Gravitasi: F = G m1 m2 / r². Cahaya: c = 3×10⁸ m/s.</p>
+            <p>Kimia: Asam basa: pH = -log[H⁺]. Reaksi redoks.</p>
+            <p>Biologi: Evolusi Darwin. Sel: Mitosis dan Meiosis.</p>
+            <p>Informatika: Struktur data: Array, Linked List. Pemrograman: Loop for(i=0; i<10; i++).</p>
+            <p>Doa: Ya Allah, lindungilah ia dari segala marabahaya. Berikanlah rezeki yang halal.</p>
+            <p>Ungkapan: Di usia 17, impianmu mulai terwujud. Tetaplah semangat!</p>
+        </div>
+        <button onclick="nextSlide()">Lanjut</button>
+    </div>
+
+    <div id="slide15" class="slide">
+        <div class="long-text">
+            <p>Matematika: Trigonometri: sin²θ + cos²θ = 1. Matriks: Determinan.</p>
+            <p>Fisika: Termodinamika: Q = mcΔT. Magnetisme: B = μ₀ I / 2πr.</p>
+            <p>Kimia: Stoikiometri: Mol = massa / Mr. Polimer.</p>
+            <p>Biologi: Ekosistem: Produsen, Konsumen, Dekomposer.</p>
+            <p>Informatika: AI: Machine Learning. Kode: print("Hello World").</p>
+            <p>Doa: Semoga selalu diberi petunjuk dan hidayah.</p>
+            <p>Ungkapan: Sahabat sejati seperti kamu, langka dan berharga.</p>
+        </div>
+        <button onclick="nextSlide()">Lanjut</button>
+    </div>
+
+    <div id="slide16" class="slide">
+        <div class="long-text">
+            <p>Matematika: Kalkulus: ∫ e^x dx = e^x. Probabilitas: P(A) = n(A)/n(S).</p>
+            <p>Fisika: Relativitas: E₀ = mc². Kuantum: h = 6.626×10⁻³⁴ J s.</p>
+            <p>Kimia: Spektroskopi. Ikatan kimia: Kovalen, Ionik.</p>
+            <p>Biologi: Genetika: Punnett Square. Imunologi.</p>
+            <p>Informatika: Database: SQL SELECT * FROM table. Algoritma: Dijkstra.</p>
+            <p>Doa: Ya Rabb, kabulkan doa-doanya.</p>
+            <p>Ungkapan: Ulang tahun adalah awal baru untuk prestasi.</p>
+        </div>
+        <button onclick="nextSlide()">Lanjut</button>
+    </div>
+
+    <div id="slide17" class="slide">
+        <div class="long-text">
+            <p>Matematika: Geometri: Luas lingkaran πr². Aljabar: (a+b)² = a² + 2ab + b².</p>
+            <p>Fisika: Elektromagnetik: V = IR. Gelombang: λ = v/f.</p>
+            <p>Kimia: Termokimia: ΔH = ΣΔH produk - ΣΔH reaktan.</p>
+            <p>Biologi: Anatomi: Sistem pernapasan. Fisiologi.</p>
+            <p>Informatika: Cybersecurity: Enkripsi. Kode: hash = sha256(data).</p>
+            <p>Doa: Semoga selalu dalam lindungan Allah.</p>
+            <p>Ungkapan: Sweet Seventeen, usia penuh mimpi dan harapan.</p>
+        </div>
+        <button onclick="nextSlide()">Lanjut</button>
+    </div>
+
+    <div id="slide18" class="slide">
+        <div class="long-text">
+            <p>Matematika: Statistika: Mean = Σx / n. Varians.</p>
+            <p>Fisika: Mekanika kuantum: Ψ fungsi gelombang.</p>
+            <p>Kimia: Elektrokimia: Sel galvanik.</p>
+            <p>Biologi: Mikrobiologi: Bakteri, Virus.</p>
+            <p>Informatika: Web Dev: HTML, CSS, JS. API.</p>
+            <p>Doa: Amin ya rabbal alamin.</p>
+            <p>Ungkapan: Terima kasih atas persahabatanmu yang indah.</p>
+        </div>
+        <button onclick="nextSlide()">Lanjut</button>
+    </div>
+
+    <div id="slide
