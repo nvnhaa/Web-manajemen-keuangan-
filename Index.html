@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kasir Pintar POS - Sistem Kasir & Manajemen Toko</title>
+  
+  <!-- CDN External Libraries: JSBarcode & HTML5-QRCode Scanner -->
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --success: #10b981;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --bg-slate: #f8fafc;
+      --card-bg: #ffffff;
+      --text-dark: #0f172a;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-slate);
+      color: var(--text-dark);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Header Navigasi */
+    header {
+      background: #1e293b;
+      color: white;
+      padding: 0.75rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .brand-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    nav {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .nav-btn {
+      background: transparent;
+      color: #94a3b8;
+      border: none;
+      padding: 0.6rem 1rem;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .nav-btn.active, .nav-btn:hover {
+      background: #334155;
+      color: white;
+    }
+
+    /* Main Container */
+    .app-container {
+      max-width: 1300px;
+      margin: 1.5rem auto;
+      padding: 0 1rem;
+      width: 100%;
+      flex: 1;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    /* Layout Cards */
+    .card {
+      background: var(--card-bg);
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      padding: 1.25rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      margin-bottom: 1rem;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 400px;
+      gap: 1.5rem;
+    }
+
+    @media (max-width: 900px) {
+      .grid-2 {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Form & Input */
+    .input-group {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 0.6rem 0.8rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .form-control:focus {
+      border-color: var(--primary);
+    }
+
+    .btn {
+      padding: 0.6rem 1rem;
+      border-radius: 6px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      transition: background 0.2s;
+    }
+
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-success { background: var(--success); color: white; }
+    .btn-danger { background: var(--danger); color: white; }
+    .btn-warning { background: var(--warning); color: white; }
+    .btn-secondary { background: #e2e8f0; color: #334155; }
+
+    /* Product Grid */
+    .products-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 0.8rem;
+      max-height: 520px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .product-card {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.8rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .product-card:hover {
+      border-color: var(--primary);
+      background: #eff6ff;
+      transform: translateY(-2px);
+    }
+
+    .product-card .p-name { font-weight: 600; font-size: 0.9rem; margin-bottom: 0.2rem; }
+    .product-card .p-code { font-size: 0.75rem; color: var(--text-muted); }
+    .product-card .p-price { font-size: 0.9rem; font-weight: 700; color: var(--primary); margin-top: 0.4rem; }
+    .product-card .p-stock { font-size: 0.75rem; color: #059669; }
+
+    /* Tables */
+    .table-responsive {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+
+    th, td {
+      padding: 0.75rem;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+    }
+
+    th {
+      background: #f1f5f9;
+      font-weight: 600;
+      color: #475569;
+    }
+
+    /* Cart Summary */
+    .cart-summary {
+      background: #f8fafc;
+      border-radius: 8px;
+      padding: 1rem;
+      margin-top: 1rem;
+    }
+
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.5rem;
+      font-size: 0.95rem;
+    }
+
+    .summary-row.total {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--primary);
+      border-top: 1px dashed var(--border);
+      padding-top: 0.5rem;
+    }
+
+    /* Dashboard Metrics */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .metric-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.2rem;
+      border-left: 4px solid var(--primary);
+    }
+
+    .metric-card.success { border-left-color: var(--success); }
+    .metric-card.danger { border-left-color: var(--danger); }
+    .metric-card.warning { border-left-color: var(--warning); }
+
+    .metric-title { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.3rem; }
+    .metric-value { font-size: 1.3rem; font-weight: 700; color: var(--text-dark); }
+
+    /* Camera Scanner Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.6);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal-content {
+      background: white;
+      padding: 1.5rem;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 480px;
+      position: relative;
+    }
+
+    .close-modal {
+      position: absolute;
+      top: 10px; right: 15px;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: #64748b;
+    }
+
+    #reader {
+      width: 100%;
+      border-radius: 8px;
+      overflow: hidden;
+      margin-top: 1rem;
+    }
+
+    /* CSS KHUSUS PRINT NOTA THERMAL (58mm) */
+    #nota-cetak {
+      display: none;
+    }
+
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+
+      #nota-cetak, #nota-cetak * {
+        visibility: visible;
+      }
+
+      #nota-cetak {
+        display: block !important;
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 58mm; /* Ukuran Kertas Thermal Standar */
+        font-family: 'Courier New', Courier, monospace;
+        font-size: 10px;
+        color: #000;
+        line-height: 1.2;
+        padding: 4px;
+      }
+
+      .nota-title { text-align: center; font-size: 12px; font-weight: bold; text-transform: uppercase; }
+      .nota-sub { text-align: center; font-size: 9px; margin-bottom: 6px; }
+      .nota-divider { border-bottom: 1px dashed #000; margin: 4px 0; }
+      .nota-table { width: 100%; border-collapse: collapse; margin: 4px 0; }
+      .nota-table td { padding: 2px 0; font-size: 10px; }
+      .text-right { text-align: right; }
+      .text-center { text-align: center; }
+      
+      .barcode-container {
+        text-align: center;
+        margin-top: 8px;
+      }
+      .barcode-container svg {
+        max-width: 100%;
+        height: 35px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header Navigasi -->
+  <header class="no-print">
+    <div class="brand-title">
+      🛒 KasirPintar <span style="font-size: 0.75rem; background: #2563eb; padding: 2px 8px; border-radius: 12px;">PRO</span>
+    </div>
+    <nav>
+      <button class="nav-btn active" onclick="switchTab('pos')">🏪 Kasir POS</button>
+      <button class="nav-btn" onclick="switchTab('inventory')">📦 Stok & Barcode</button>
+      <button class="nav-btn" onclick="switchTab('expenses')">💸 Pengeluaran</button>
+      <button class="nav-btn" onclick="switchTab('reports')">📊 Laporan & Keuntungan</button>
+    </nav>
+  </header>
+
+  <div class="app-container no-print">
+
+    <!-- TAB 1: KASIR POS -->
+    <div id="tab-pos" class="tab-content active">
+      <div class="grid-2">
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h3>Pilih & Cari Produk</h3>
+            <button class="btn btn-warning" onclick="openCameraScanner('pos')">
+              📷 Scan Barcode Kamera
+            </button>
+          </div>
+
+          <div class="input-group">
+            <input type="text" id="posSearch" class="form-control" placeholder="Cari nama produk atau barcode (SKU)..." oninput="renderPosProducts()">
+          </div>
+
+          <div class="products-grid" id="posProductGrid"></div>
+        </div>
+
+        <div class="card">
+          <h3>Keranjang Belanja</h3>
+          <div style="max-height: 250px; overflow-y: auto; margin-top: 0.8rem;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Produk</th>
+                  <th style="text-align: center;">Qty</th>
+                  <th style="text-align: right;">Subtotal</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="cartTableBody"></tbody>
+            </table>
+          </div>
+
+          <div class="cart-summary">
+            <div class="summary-row">
+              <span>Total Items:</span>
+              <span id="cartTotalItems">0</span>
+            </div>
+            <div class="summary-row total">
+              <span>Total Bayar:</span>
+              <span id="cartGrandTotal">Rp 0</span>
+            </div>
+
+            <div style="margin-top: 1rem;">
+              <label style="font-size: 0.85rem; font-weight: 600;">Nominal Uang Tunai (Rp):</label>
+              <input type="number" id="cashAmount" class="form-control" placeholder="0" style="margin-top: 0.3rem;" oninput="calculateKembalian()">
+            </div>
+
+            <div class="summary-row" style="margin-top: 0.8rem; font-weight: 600;">
+              <span>Kembalian:</span>
+              <span id="changeAmount" style="color: var(--success);">Rp 0</span>
+            </div>
+
+            <button class="btn btn-success" id="btnPrintReceipt" style="width: 100%; margin-top: 1rem; padding: 0.8rem; font-size: 1rem;" onclick="processTransaction()" disabled>
+              🖨️ Cetak Nota & Selesai
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: STOK & INVENTORY -->
+    <div id="tab-inventory" class="tab-content">
+      <div class="card">
+        <h3>Tambah / Edit Produk Baru</h3>
+        <form id="productForm" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.8rem; margin-top: 1rem;" onsubmit="saveProduct(event)">
+          <input type="hidden" id="editProdIndex">
+          <div>
+            <label style="font-size: 0.8rem; font-weight:600;">Kode Barcode / SKU</label>
+            <div style="display:flex; gap: 4px;">
+              <input type="text" id="prodBarcode" class="form-control" placeholder="Barcode ID" required>
+              <button type="button" class="btn btn-secondary" onclick="openCameraScanner('inventory')">📷</button>
+            </div>
+          </div>
+          <div>
+            <label style="font-size: 0.8rem; font-weight:600;">Nama Produk</label>
+            <input type="text" id="prodName" class="form-control" placeholder="Nama Barang" required>
+          </div>
+          <div>
+            <label style="font-size: 0.8rem; font-weight:600;">Harga Modal (HPP)</label>
+            <input type="number" id="prodBuyPrice" class="form-control" placeholder="Rp" required>
+          </div>
+          <div>
+            <label style="font-size: 0.8rem; font-weight:600;">Harga Jual</label>
+            <input type="number" id="prodSellPrice" class="form-control" placeholder="Rp" required>
+          </div>
+          <div>
+            <label style="font-size: 0.8rem; font-weight:600;">Stok Awal</label>
+            <input type="number" id="prodStock" class="form-control" placeholder="Jumlah" required>
+          </div>
+          <div style="display: flex; align-items: flex-end; gap: 0.5rem;">
+            <button type="submit" class="btn btn-primary" style="flex: 1;">💾 Simpan Produk</button>
+            <button type="button" class="btn btn-secondary" onclick="resetProductForm()">Batal</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+          <h3>Daftar Stok Produk & Kode Barcode</h3>
+          <input type="text" id="inventorySearch" class="form-control" placeholder="Cari produk..." style="width: 250px;" oninput="renderInventoryTable()">
+        </div>
+
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Barcode (SKU)</th>
+                <th>Nama Produk</th>
+                <th>Harga Modal</th>
+                <th>Harga Jual</th>
+                <th>Stok</th>
+                <th>Input Barang Masuk / Keluar</th>
+                <th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="inventoryTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: PENGELUARAN -->
+    <div id="tab-expenses" class="tab-content">
+      <div class="card">
+        <h3>Input Pengeluaran Operasional</h3>
+        <form style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.8rem; margin-top: 1rem;" onsubmit="saveExpense(event)">
+          <div>
+            <label style="font-size: 0.8rem; font-weight:600;">Tanggal</label>
+            <input type="date" id="expDate" class="form-control" required>
+          </div>
+          <div>
+            <label style="font-size: 0.8rem; font-weight:600;">Kategori / Deskripsi Pengeluaran</label>
+            <input type="text" id="expDesc" class="form-control" placeholder="Misal: Biaya Listrik, Sewa, Plastik, Gaji" required>
+          </div>
+          <div>
+            <label style="font-size: 0.8rem; font-weight:600;">Jumlah Nominal (Rp)</label>
+            <input type="number" id="expAmount" class="form-control" placeholder="0" required>
+          </div>
+          <div style="display: flex; align-items: flex-end;">
+            <button type="submit" class="btn btn-danger" style="width: 100%;">➕ Catat Pengeluaran</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="card">
+        <h3>Riwayat Pengeluaran Operasional</h3>
+        <div class="table-responsive" style="margin-top: 1rem;">
+          <table>
+            <thead>
+              <tr>
+                <th>Tanggal</th>
+                <th>Keterangan</th>
+                <th>Nominal</th>
+                <th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="expenseTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: LAPORAN KEUANGAN -->
+    <div id="tab-reports" class="tab-content">
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+          <h3>Filter Laporan Keuntungan</h3>
+          <div style="display: flex; gap: 0.5rem; align-items: center;">
+            <label style="font-size: 0.85rem; font-weight: 600;">Tanggal:</label>
+            <input type="date" id="reportDate" class="form-control" onchange="renderReports()">
+            <button class="btn btn-secondary" onclick="setReportToday()">Hari Ini</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-title">Pemasukan (Omset)</div>
+          <div class="metric-value" id="repIncome">Rp 0</div>
+        </div>
+        <div class="metric-card warning">
+          <div class="metric-title">Harga Pokok Penjualan (HPP)</div>
+          <div class="metric-value" id="repHpp">Rp 0</div>
+        </div>
+        <div class="metric-card danger">
+          <div class="metric-title">Pengeluaran Ops</div>
+          <div class="metric-value" id="repExpense">Rp 0</div>
+        </div>
+        <div class="metric-card success">
+          <div class="metric-title">Keuntungan Bersih (Profit)</div>
+          <div class="metric-value" id="repNetProfit">Rp 0</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Detail Penjualan Tersebut</h3>
+        <div class="table-responsive" style="margin-top: 1rem;">
+          <table>
+            <thead>
+              <tr>
+                <th>No. Transaksi</th>
+                <th>Waktu</th>
+                <th>Items Terjual</th>
+                <th>Total Omset</th>
+                <th>Laba Kotor</th>
+              </tr>
+            </thead>
+            <tbody id="reportTxBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Modal Kamera Scanner Barcode -->
+  <div class="modal" id="cameraModal">
+    <div class="modal-content">
+      <span class="close-modal" onclick="closeCameraScanner()">&times;</span>
+      <h3 style="text-align: center;">Scan Barcode via Kamera</h3>
+      <div id="reader"></div>
+      <p style="text-align: center; font-size: 0.8rem; color: var(--text-muted); margin-top: 0.5rem;">
+        Arahkan kamera ke barcode pada kemasan produk
+      </p>
+    </div>
+  </div>
+
+  <!-- Tampilan Struk Nota Cetak (Thermal 58mm) -->
+  <div id="nota-cetak">
+    <div class="nota-title">TOKO KASIR PINTAR</div>
+    <div class="nota-sub">Jl. Utama No. 88, Jakarta<br>Telp: 0812-9999-8888</div>
+    <div class="nota-divider"></div>
+    <div style="display: flex; justify-content: space-between;">
+      <span id="nDate">Tgl: -</span>
+      <span id="nTxId">Tx: -</span>
+    </div>
+    <div class="nota-divider"></div>
+
+    <table class="nota-table" id="nItems"></table>
+
+    <div class="nota-divider"></div>
+    <div style="display: flex; justify-content: space-between;">
+      <span>TOTAL:</span>
+      <strong id="nTotal">Rp 0</strong>
+    </div>
+    <div style="display: flex; justify-content: space-between;">
+      <span>TUNAI:</span>
+      <span id="nCash">Rp 0</span>
+    </div>
+    <div style="display: flex; justify-content: space-between;">
+      <span>KEMBALI:</span>
+      <span id="nChange">Rp 0</span>
+    </div>
+
+    <div class="nota-divider"></div>
+    
+    <div class="barcode-container">
+      <svg id="receiptBarcode"></svg>
+    </div>
+
+    <div class="text-center" style="margin-top: 6px; font-size: 9px;">
+      *** TERIMA KASIH ***<br>
+      Barang yang sudah dibeli<br>
+      tidak dapat ditukar/dikembalikan.
+    </div>
+  </div>
+
+  <script>
+    /* LOCAL STORAGE DATA MANAGEMENT */
+    let products = JSON.parse(localStorage.getItem('kp_products')) || [
+      { barcode: '8991001001', name: 'Kopi Hitam Sachets', buyPrice: 1500, sellPrice: 3000, stock: 50 },
+      { barcode: '8991001002', name: 'Air Mineral 600ml', buyPrice: 2000, sellPrice: 4000, stock: 100 },
+      { barcode: '8991001003', name: 'Mie Instan Goreng', buyPrice: 2800, sellPrice: 3500, stock: 40 },
+      { barcode: '8991001004', name: 'Roti Cokelat', buyPrice: 6000, sellPrice: 8500, stock: 20 }
+    ];
+
+    let transactions = JSON.parse(localStorage.getItem('kp_transactions')) || [];
+    let expenses = JSON.parse(localStorage.getItem('kp_expenses')) || [];
+
+    let cart = [];
+    let html5QrcodeScanner = null;
+    let activeScanTarget = 'pos';
+
+    function saveData() {
+      localStorage.setItem('kp_products', JSON.stringify(products));
+      localStorage.setItem('kp_transactions', JSON.stringify(transactions));
+      localStorage.setItem('kp_expenses', JSON.stringify(expenses));
+    }
+
+    function formatRp(val) {
+      return 'Rp ' + Number(val).toLocaleString('id-ID');
+    }
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+      
+      document.getElementById('tab-' + tabId).classList.add('active');
+      event.target.classList.add('active');
+
+      if (tabId === 'pos') renderPosProducts();
+      if (tabId === 'inventory') renderInventoryTable();
+      if (tabId === 'expenses') renderExpenses();
+      if (tabId === 'reports') {
+        setReportToday();
+        renderReports();
+      }
+    }
+
+    /* POS LOGIC */
+    function renderPosProducts() {
+      const query = document.getElementById('posSearch').value.toLowerCase();
+      const grid = document.getElementById('posProductGrid');
+      
+      const filtered = products.filter(p => 
+        p.name.toLowerCase().includes(query) || p.barcode.toLowerCase().includes(query)
+      );
+
+      if (filtered.length === 0) {
+        grid.innerHTML = `<div style="grid-column: 1/-1; text-align:center; color:#94a3b8; padding: 2rem;">Produk tidak ditemukan</div>`;
+        return;
+      }
+
+      grid.innerHTML = filtered.map(p => `
+        <div class="product-card" onclick="addToCart('${p.barcode}')">
+          <div>
+            <div class="p-name">${p.name}</div>
+            <div class="p-code">${p.barcode}</div>
+          </div>
+          <div>
+            <div class="p-price">${formatRp(p.sellPrice)}</div>
+            <div class="p-stock">Stok: ${p.stock}</div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function addToCart(barcode) {
+      const prod = products.find(p => p.barcode === barcode);
+      if (!prod) return;
+
+      if (prod.stock <= 0) {
+        alert('Stok produk habis!');
+        return;
+      }
+
+      const existing = cart.find(c => c.barcode === barcode);
+      if (existing) {
+        if (existing.qty + 1 > prod.stock) {
+          alert('Pengambilan melebihi stok yang tersedia!');
+          return;
+        }
+        existing.qty += 1;
+      } else {
+        cart.push({ ...prod, qty: 1 });
+      }
+
+      renderCart();
+    }
+
+    function updateCartQty(index, delta) {
+      const item = cart[index];
+      const prod = products.find(p => p.barcode === item.barcode);
+
+      if (delta > 0 && item.qty + 1 > prod.stock) {
+        alert('Pengambilan melebihi stok yang tersedia!');
+        return;
+      }
+
+      item.qty += delta;
+      if (item.qty <= 0) {
+        cart.splice(index, 1);
+      }
+      renderCart();
+    }
+
+    function renderCart() {
+      const tbody = document.getElementById('cartTableBody');
+      if (cart.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#94a3b8; padding: 1.5rem 0;">Keranjang Kosong</td></tr>`;
+      } else {
+        tbody.innerHTML = cart.map((item, idx) => `
+          <tr>
+            <td><strong>${item.name}</strong><br><small style="color:#64748b">${formatRp(item.sellPrice)}</small></td>
+            <td style="text-align: center;">
+              <button class="btn btn-secondary" style="padding: 2px 6px;" onclick="updateCartQty(${idx}, -1)">-</button>
+              <span style="margin: 0 4px; font-weight:600;">${item.qty}</span>
+              <button class="btn btn-secondary" style="padding: 2px 6px;" onclick="updateCartQty(${idx}, 1)">+</button>
+            </td>
+            <td style="text-align: right; font-weight:600;">${formatRp(item.sellPrice * item.qty)}</td>
+            <td><button style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:1.1rem;" onclick="cart.splice(${idx}, 1); renderCart();">&times;</button></td>
+          </tr>
+        `).join('');
+      }
+
+      const totalItems = cart.reduce((sum, item) => sum + item.qty, 0);
+      const grandTotal = cart.reduce((sum, item) => sum + (item.sellPrice * item.qty), 0);
+
+      document.getElementById('cartTotalItems').textContent = totalItems;
+      document.getElementById('cartGrandTotal').textContent = formatRp(grandTotal);
+      calculateKembalian();
+    }
+
+    function calculateKembalian() {
+      const grandTotal = cart.reduce((sum, item) => sum + (item.sellPrice * item.qty), 0);
+      const cash = parseFloat(document.getElementById('cashAmount').value) || 0;
+      const change = cash - grandTotal;
+      const changeElem = document.getElementById('changeAmount');
+      const btnPrint = document.getElementById('btnPrintReceipt');
+
+      if (cart.length > 0 && cash >= grandTotal) {
+        changeElem.textContent = formatRp(change);
+        changeElem.style.color = 'var(--success)';
+        btnPrint.disabled = false;
+      } else {
+        changeElem.textContent = cash > 0 ? 'Nominal Kurang' : 'Rp 0';
+        changeElem.style.color = 'var(--danger)';
+        btnPrint.disabled = true;
+      }
+    }
+
+    function processTransaction() {
+      const grandTotal = cart.reduce((sum, item) => sum + (item.sellPrice * item.qty), 0);
+      const cash = parseFloat(document.getElementById('cashAmount').value) || 0;
+      const change = cash - grandTotal;
+
+      if (cash < grandTotal) return;
+
+      const now = new Date();
+      const txId = 'TX' + Date.now().toString().slice(-6);
+
+      cart.forEach(c => {
+        const prod = products.find(p => p.barcode === c.barcode);
+        if (prod) prod.stock -= c.qty;
+      });
+
+      const txRecord = {
+        id: txId,
+        date: now.toISOString().split('T')[0],
+        time: now.toTimeString().split(' ')[0].substring(0, 5),
+        items: [...cart],
+        total: grandTotal,
+        cash: cash,
+        change: change
+      };
+
+      transactions.push(txRecord);
+      saveData();
+
+      document.getElementById('nDate').textContent = `Tgl: ${txRecord.date} ${txRecord.time}`;
+      document.getElementById('nTxId').textContent = `Tx: ${txId}`;
+      document.getElementById('nTotal').textContent = formatRp(grandTotal);
+      document.getElementById('nCash').textContent = formatRp(cash);
+      document.getElementById('nChange').textContent = formatRp(change);
+
+      document.getElementById('nItems').innerHTML = cart.map(c => `
+        <tr><td colspan="2"><strong>${c.name}</strong></td></tr>
+        <tr>
+          <td>${c.qty} x ${c.sellPrice.toLocaleString('id-ID')}</td>
+          <td class="text-right">${(c.qty * c.sellPrice).toLocaleString('id-ID')}</td>
+        </tr>
+      `).join('');
+
+      JsBarcode("#receiptBarcode", txId, {
+        format: "CODE128",
+        width: 1.5,
+        height: 35,
+        displayValue: true,
+        fontSize: 10
+      });
+
+      window.print();
+
+      cart = [];
+      document.getElementById('cashAmount').value = '';
+      renderCart();
+      renderPosProducts();
+    }
+
+    /* INVENTORY & BARCODE LOGIC */
+    function renderInventoryTable() {
+      const query = document.getElementById('inventorySearch').value.toLowerCase();
+      const tbody = document.getElementById('inventoryTableBody');
+
+      const filtered = products.filter(p => 
+        p.name.toLowerCase().includes(query) || p.barcode.toLowerCase().includes(query)
+      );
+
+      tbody.innerHTML = filtered.map((p, i) => `
+        <tr>
+          <td>
+            <strong>${p.barcode}</strong>
+            <div style="margin-top:2px;"><svg id="barcode-${i}"></svg></div>
+          </td>
+          <td><strong>${p.name}</strong></td>
+          <td>${formatRp(p.buyPrice)}</td>
+          <td>${formatRp(p.sellPrice)}</td>
+          <td><span style="font-weight:700; color: ${p.stock < 5 ? 'var(--danger)' : 'var(--text-dark)'}">${p.stock}</span></td>
+          <td>
+            <div style="display:flex; gap: 4px; align-items: center;">
+              <input type="number" id="stk-${i}" style="width: 60px;" class="form-control" placeholder="Qty">
+              <button class="btn btn-success" style="padding: 2px 8px;" onclick="adjustStock(${i}, 'in')">+ Masuk</button>
+              <button class="btn btn-danger" style="padding: 2px 8px;" onclick="adjustStock(${i}, 'out')">- Keluar</button>
+            </div>
+          </td>
+          <td>
+            <button class="btn btn-secondary" style="padding: 2px 8px;" onclick="editProduct(${i})">Edit</button>
+            <button class="btn btn-danger" style="padding: 2px 8px;" onclick="deleteProduct(${i})">Hapus</button>
+          </td>
+        </tr>
+      `).join('');
+
+      filtered.forEach((p, i) => {
+        try {
+          JsBarcode(`#barcode-${i}`, p.barcode, {
+            format: "CODE128",
+            width: 1,
+            height: 25,
+            displayValue: false
+          });
+        } catch(e){}
+      });
+    }
+
+    function saveProduct(e) {
+      e.preventDefault();
+      const barcode = document.getElementById('prodBarcode').value.trim();
+      const name = document.getElementById('prodName').value.trim();
+      const buyPrice = parseFloat(document.getElementById('prodBuyPrice').value);
+      const sellPrice = parseFloat(document.getElementById('prodSellPrice').value);
+      const stock = parseInt(document.getElementById('prodStock').value);
+      const editIdx = document.getElementById('editProdIndex').value;
+
+      if (editIdx !== '') {
+        products[editIdx] = { barcode, name, buyPrice, sellPrice, stock };
+      } else {
+        if (products.some(p => p.barcode === barcode)) {
+          alert('Kode Barcode sudah digunakan oleh produk lain!');
+          return;
+        }
+        products.push({ barcode, name, buyPrice, sellPrice, stock });
+      }
+
+      saveData();
+      resetProductForm();
+      renderInventoryTable();
+    }
+
+    function editProduct(idx) {
+      const p = products[idx];
+      document.getElementById('editProdIndex').value = idx;
+      document.getElementById('prodBarcode').value = p.barcode;
+      document.getElementById('prodName').value = p.name;
+      document.getElementById('prodBuyPrice').value = p.buyPrice;
+      document.getElementById('prodSellPrice').value = p.sellPrice;
+      document.getElementById('prodStock').value = p.stock;
+    }
+
+    function resetProductForm() {
+      document.getElementById('productForm').reset();
+      document.getElementById('editProdIndex').value = '';
+    }
+
+    function deleteProduct(idx) {
+      if (confirm('Yakin ingin menghapus produk ini?')) {
+        products.splice(idx, 1);
+        saveData();
+        renderInventoryTable();
+      }
+    }
+
+    function adjustStock(idx, type) {
+      const input = document.getElementById(`stk-${idx}`);
+      const qty = parseInt(input.value);
+      if (!qty || qty <= 0) return;
+
+      if (type === 'in') {
+        products[idx].stock += qty;
+      } else {
+        if (products[idx].stock < qty) {
+          alert('Stok tidak cukup!');
+          return;
+        }
+        products[idx].stock -= qty;
+      }
+
+      input.value = '';
+      saveData();
+      renderInventoryTable();
+    }
+
+    /* EXPENSES LOGIC */
+    function saveExpense(e) {
+      e.preventDefault();
+      const date = document.getElementById('expDate').value;
+      const desc = document.getElementById('expDesc').value.trim();
+      const amount = parseFloat(document.getElementById('expAmount').value);
+
+      expenses.push({ id: Date.now(), date, desc, amount });
+      saveData();
+      document.getElementById('expDesc').value = '';
+      document.getElementById('expAmount').value = '';
+      renderExpenses();
+    }
+
+    function renderExpenses() {
+      const tbody = document.getElementById('expenseTableBody');
+      if (expenses.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#94a3b8;">Belum ada catatan pengeluaran</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = expenses.map((exp, idx) => `
+        <tr>
+          <td>${exp.date}</td>
+          <td>${exp.desc}</td>
+          <td style="color:var(--danger); font-weight:600;">${formatRp(exp.amount)}</td>
+          <td><button class="btn btn-danger" style="padding:2px 8px;" onclick="expenses.splice(${idx},1); saveData(); renderExpenses();">Hapus</button></td>
+        </tr>
+      `).join('');
+    }
+
+    document.getElementById('expDate').value = new Date().toISOString().split('T')[0];
+
+    /* REPORTS & PROFIT LOGIC */
+    function setReportToday() {
+      document.getElementById('reportDate').value = new Date().toISOString().split('T')[0];
+      renderReports();
+    }
+
+    function renderReports() {
+      const selectedDate = document.getElementById('reportDate').value;
+      
+      const filteredTx = transactions.filter(t => t.date === selectedDate);
+      const filteredExp = expenses.filter(e => e.date === selectedDate);
+
+      let totalIncome = 0;
+      let totalHpp = 0;
+
+      filteredTx.forEach(tx => {
+        totalIncome += tx.total;
+        tx.items.forEach(item => {
+          totalHpp += (item.buyPrice * item.qty);
+        });
+      });
+
+      const totalExpense = filteredExp.reduce((sum, e) => sum + e.amount, 0);
+      const grossProfit = totalIncome - totalHpp;
+      const netProfit = grossProfit - totalExpense;
+
+      document.getElementById('repIncome').textContent = formatRp(totalIncome);
+      document.getElementById('repHpp').textContent = formatRp(totalHpp);
+      document.getElementById('repExpense').textContent = formatRp(totalExpense);
+      document.getElementById('repNetProfit').textContent = formatRp(netProfit);
+
+      const tbody = document.getElementById('reportTxBody');
+      if (filteredTx.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#94a3b8;">Tidak ada transaksi pada tanggal ini</td></tr>`;
+      } else {
+        tbody.innerHTML = filteredTx.map(tx => {
+          const txHpp = tx.items.reduce((s, i) => s + (i.buyPrice * i.qty), 0);
+          const txProfit = tx.total - txHpp;
+          const itemsStr = tx.items.map(i => `${i.name} (${i.qty})`).join(', ');
+
+          return `
+            <tr>
+              <td><strong>${tx.id}</strong></td>
+              <td>${tx.time}</td>
+              <td style="font-size:0.85rem;">${itemsStr}</td>
+              <td style="font-weight:600;">${formatRp(tx.total)}</td>
+              <td style="color:var(--success); font-weight:600;">${formatRp(txProfit)}</td>
+            </tr>
+          `;
+        }).join('');
+      }
+    }
+
+    /* CAMERA BARCODE SCANNER LOGIC */
+    function openCameraScanner(target) {
+      activeScanTarget = target;
+      document.getElementById('cameraModal').style.display = 'flex';
+
+      html5QrcodeScanner = new Html5Qrcode("reader");
+      html5QrcodeScanner.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 250, height: 150 } },
+        (decodedText) => {
+          closeCameraScanner();
+          if (activeScanTarget === 'pos') {
+            document.getElementById('posSearch').value = decodedText;
+            addToCart(decodedText);
+          } else if (activeScanTarget === 'inventory') {
+            document.getElementById('prodBarcode').value = decodedText;
+          }
+        },
+        (errorMessage) => {}
+      ).catch(err => {
+        alert('Gagal membuka kamera: ' + err);
+        closeCameraScanner();
+      });
+    }
+
+    function closeCameraScanner() {
+      if (html5QrcodeScanner) {
+        html5QrcodeScanner.stop().then(() => {
+          html5QrcodeScanner.clear();
+          document.getElementById('cameraModal').style.display = 'none';
+        }).catch(() => {
+          document.getElementById('cameraModal').style.display = 'none';
+        });
+      } else {
+        document.getElementById('cameraModal').style.display = 'none';
+      }
+    }
+
+    /* Init */
+    renderPosProducts();
+    renderCart();
+  </script>
+</body>
+</html>
